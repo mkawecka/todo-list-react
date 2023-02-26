@@ -1,5 +1,7 @@
 'use strict';
 
+const LOCALSTORAGE_KEY = 'tasks';
+
 const categoryIcon = {
 	work: 'briefcase',
 	home: 'home',
@@ -28,7 +30,7 @@ const Todo = ({ id, category, text, isDone, onEdit, onDelete, onComplete }) => {
 	);
 };
 
-const TodoList = ({ onEdit, onDelete, onComplete, todos, setTodos }) => {
+const TodoList = ({ onEdit, onDelete, onComplete, todos, saveTodos }) => {
 	const inputRef = React.useRef();
 	const selectRef = React.useRef();
 	const [error, setError] = React.useState('');
@@ -44,11 +46,7 @@ const TodoList = ({ onEdit, onDelete, onComplete, todos, setTodos }) => {
 				isDone: false,
 			};
 
-			setTodos([...todos, newTodo]);
-			// renderTask(newTask);
-			// TASKS.push(newTask);
-
-			// updateStorage();
+			saveTodos([...todos, newTodo]);
 
 			inputRef.current.value = '';
 			selectRef.current.value = '0';
@@ -149,8 +147,13 @@ const Popup = ({ todoToEdit, onEditDecline, onEditConfirm }) => {
 };
 
 const App = () => {
-	const [todos, setTodos] = React.useState([]);
+	const [todos, setTodos] = React.useState(JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY)) || []);
 	const [todoToEdit, setTodoToEdit] = React.useState(null);
+
+	const saveTodos = newTodos => {
+		setTodos(newTodos);
+		localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(newTodos));
+	};
 
 	const onEditDecline = () => {
 		setTodoToEdit(null);
@@ -162,7 +165,7 @@ const App = () => {
 
 		todoOnEdit.text = text;
 		todoOnEdit.category = category;
-		setTodos(newTodos);
+		saveTodos(newTodos);
 		setTodoToEdit(null);
 	};
 
@@ -172,7 +175,7 @@ const App = () => {
 
 		newTodos.splice(todoToDelteIndex, 1);
 
-		setTodos(newTodos);
+		saveTodos(newTodos);
 	};
 
 	const onComplete = id => {
@@ -181,25 +184,24 @@ const App = () => {
 
 		todoToComplete.isDone = !todoToComplete.isDone;
 
-		setTodos(newTodos);
+		saveTodos(newTodos);
 	};
 
 	return (
 		<>
-			<TodoList onEdit={setTodoToEdit} todos={todos} setTodos={setTodos} onDelete={onDelete} onComplete={onComplete} />
+			<TodoList
+				onEdit={setTodoToEdit}
+				todos={todos}
+				saveTodos={saveTodos}
+				onDelete={onDelete}
+				onComplete={onComplete}
+			/>
 			{todoToEdit ? (
 				<Popup todoToEdit={todoToEdit} onEditDecline={onEditDecline} onEditConfirm={onEditConfirm} />
 			) : null}
 		</>
 	);
 };
-
-// const LOCALSTORAGE_KEY = 'tasks';
-// const TASKS = JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY)) || [];
-
-// const updateStorage = () => {
-// 	localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(TASKS));
-// };
 
 const rootNode = document.getElementById('root');
 const root = ReactDOM.createRoot(rootNode);
