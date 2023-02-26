@@ -7,20 +7,20 @@ const categoryIcon = {
 	other: 'tasks',
 };
 
-const Todo = ({ id, category, text, isDone, onEdit }) => {
+const Todo = ({ id, category, text, isDone, onEdit, onDelete, onComplete }) => {
 	return (
 		<li className={isDone ? 'completed' : ''}>
 			<div className='task'>
 				<i className={`category-icon fas fa-${categoryIcon[category]}`} aria-hidden='true'></i> {text}
 			</div>
 			<div className='tools'>
-				<button className='complete'>
+				<button className='complete' onClick={() => onComplete(id)}>
 					<i className='fas fa-check' aria-hidden='true'></i>
 				</button>
 				<button className='edit' onClick={() => onEdit({ id, category, text })}>
 					EDIT
 				</button>
-				<button className='delete'>
+				<button className='delete' onClick={() => onDelete(id)}>
 					<i className='fas fa-times' aria-hidden='true'></i>
 				</button>
 			</div>
@@ -28,7 +28,7 @@ const Todo = ({ id, category, text, isDone, onEdit }) => {
 	);
 };
 
-const TodoList = ({ onEdit, todos, setTodos }) => {
+const TodoList = ({ onEdit, onDelete, onComplete, todos, setTodos }) => {
 	const inputRef = React.useRef();
 	const selectRef = React.useRef();
 	const [error, setError] = React.useState('');
@@ -95,7 +95,7 @@ const TodoList = ({ onEdit, todos, setTodos }) => {
 				<ul>
 					{todos.map(todo => (
 						// <Todo text={todo.text} category={todo.category} isDone={todo.isDone} />
-						<Todo key={todo.id} {...todo} onEdit={onEdit} />
+						<Todo key={todo.id} {...todo} onEdit={onEdit} onDelete={onDelete} onComplete={onComplete} />
 					))}
 				</ul>
 			</div>
@@ -151,6 +151,7 @@ const Popup = ({ todoToEdit, onEditDecline, onEditConfirm }) => {
 const App = () => {
 	const [todos, setTodos] = React.useState([]);
 	const [todoToEdit, setTodoToEdit] = React.useState(null);
+
 	const onEditDecline = () => {
 		setTodoToEdit(null);
 	};
@@ -158,15 +159,34 @@ const App = () => {
 	const onEditConfirm = (id, text, category) => {
 		const newTodos = JSON.parse(JSON.stringify(todos));
 		const todoOnEdit = newTodos.find(todo => todo.id == id);
+
 		todoOnEdit.text = text;
 		todoOnEdit.category = category;
 		setTodos(newTodos);
 		setTodoToEdit(null);
 	};
 
+	const onDelete = id => {
+		const newTodos = JSON.parse(JSON.stringify(todos));
+		const todoToDelteIndex = newTodos.findIndex(todo => todo.id == id);
+
+		newTodos.splice(todoToDelteIndex, 1);
+
+		setTodos(newTodos);
+	};
+
+	const onComplete = id => {
+		const newTodos = JSON.parse(JSON.stringify(todos));
+		const todoToComplete = newTodos.find(todo => todo.id == id);
+
+		todoToComplete.isDone = !todoToComplete.isDone;
+
+		setTodos(newTodos);
+	};
+
 	return (
 		<>
-			<TodoList onEdit={setTodoToEdit} todos={todos} setTodos={setTodos} />
+			<TodoList onEdit={setTodoToEdit} todos={todos} setTodos={setTodos} onDelete={onDelete} onComplete={onComplete} />
 			{todoToEdit ? (
 				<Popup todoToEdit={todoToEdit} onEditDecline={onEditDecline} onEditConfirm={onEditConfirm} />
 			) : null}
@@ -176,8 +196,6 @@ const App = () => {
 
 // const LOCALSTORAGE_KEY = 'tasks';
 // const TASKS = JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY)) || [];
-
-
 
 // const updateStorage = () => {
 // 	localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(TASKS));
