@@ -7,7 +7,7 @@ const categoryIcon = {
 	other: 'tasks',
 };
 
-const Todo = ({ category, text, isDone }) => {
+const Todo = ({ id, category, text, isDone, onEdit }) => {
 	return (
 		<li className={isDone ? 'completed' : ''}>
 			<div className='task'>
@@ -17,7 +17,9 @@ const Todo = ({ category, text, isDone }) => {
 				<button className='complete'>
 					<i className='fas fa-check' aria-hidden='true'></i>
 				</button>
-				<button className='edit'>EDIT</button>
+				<button className='edit' onClick={() => onEdit({ id, category, text })}>
+					EDIT
+				</button>
 				<button className='delete'>
 					<i className='fas fa-times' aria-hidden='true'></i>
 				</button>
@@ -26,11 +28,10 @@ const Todo = ({ category, text, isDone }) => {
 	);
 };
 
-const TodoList = () => {
+const TodoList = ({ onEdit, todos, setTodos }) => {
 	const inputRef = React.useRef();
 	const selectRef = React.useRef();
 	const [error, setError] = React.useState('');
-	const [todos, setTodos] = React.useState([]);
 
 	const addTodo = () => {
 		setError('');
@@ -68,22 +69,21 @@ const TodoList = () => {
 					<i className='fas fa-clipboard-list'></i> ToDo List
 				</h1>
 				<input ref={inputRef} type='text' className='todo-input' placeholder='Enter task name...' />
-				<select ref={selectRef} className='todo-select'>
-					<option value='0' className='category-option' selected disabled>
-						{' '}
-						-select category-{' '}
+				<select ref={selectRef} className='todo-select' defaultValue='0'>
+					<option value='0' className='category-option' disabled>
+						-select category-
 					</option>
 					<option value='work' className='category-option'>
-						<i className='fas fa-briefcase'></i> Work
+						Work
 					</option>
 					<option value='home' className='category-option'>
-						<i className='fas fa-home'></i> Home
+						Home
 					</option>
 					<option value='kids' className='category-option'>
-						<i className='fas fa-child'></i> Kids
+						Kids
 					</option>
 					<option value='other' className='category-option'>
-						<i className='fas fa-tasks'></i> Other
+						Other
 					</option>
 				</select>
 				<button className='btn-add' onClick={addTodo}>
@@ -95,7 +95,7 @@ const TodoList = () => {
 				<ul>
 					{todos.map(todo => (
 						// <Todo text={todo.text} category={todo.category} isDone={todo.isDone} />
-						<Todo key={todo.id} {...todo} />
+						<Todo key={todo.id} {...todo} onEdit={onEdit} />
 					))}
 				</ul>
 			</div>
@@ -103,76 +103,85 @@ const TodoList = () => {
 	);
 };
 
-const Popup = () => {
+const Popup = ({ todoToEdit, onEditDecline, onEditConfirm }) => {
+	const inputRef = React.useRef();
+	const selectRef = React.useRef();
 	return (
 		<div className='popup'>
 			<h3>Edit task:</h3>
 			<div className='popup-body'>
 				<p className='popup-info'></p>
-				<input type='text' className='popup-input' placeholder='Enter new task name...' />
-				<select>
-					<option value='0' className='category-option' selected disabled>
-						{' '}
-						-select category-{' '}
+				<input
+					ref={inputRef}
+					type='text'
+					className='popup-input'
+					placeholder='Enter new task name...'
+					defaultValue={todoToEdit.text}
+				/>
+				<select ref={selectRef} className='popup-select' defaultValue={todoToEdit.category}>
+					<option value='0' className='category-option' disabled>
+						-select category-
 					</option>
 					<option value='work' className='category-option'>
-						<i className='fas fa-briefcase'></i> Work
+						Work
 					</option>
 					<option value='home' className='category-option'>
-						<i className='fas fa-home'></i> Home
+						Home
 					</option>
 					<option value='kids' className='category-option'>
-						<i className='fas fa-child'></i> Kids
+						Kids
 					</option>
 					<option value='other' className='category-option'>
-						<i className='fas fa-tasks'></i> Other
+						Other
 					</option>
 				</select>
-				<button className='popup-btn accept'>Confirm</button>
-				<button className='popup-btn cancel'>Decline</button>
+				<button
+					className='popup-btn accept'
+					onClick={() => onEditConfirm(todoToEdit.id, inputRef.current.value, selectRef.current.value)}>
+					Confirm
+				</button>
+				<button className='popup-btn cancel' onClick={onEditDecline}>
+					Decline
+				</button>
 			</div>
 		</div>
+	);
+};
+
+const App = () => {
+	const [todos, setTodos] = React.useState([]);
+	const [todoToEdit, setTodoToEdit] = React.useState(null);
+	const onEditDecline = () => {
+		setTodoToEdit(null);
+	};
+
+	const onEditConfirm = (id, text, category) => {
+		const newTodos = JSON.parse(JSON.stringify(todos));
+		const todoOnEdit = newTodos.find(todo => todo.id == id);
+		todoOnEdit.text = text;
+		todoOnEdit.category = category;
+		setTodos(newTodos);
+		setTodoToEdit(null);
+	};
+
+	return (
+		<>
+			<TodoList onEdit={setTodoToEdit} todos={todos} setTodos={setTodos} />
+			{todoToEdit ? (
+				<Popup todoToEdit={todoToEdit} onEditDecline={onEditDecline} onEditConfirm={onEditConfirm} />
+			) : null}
+		</>
 	);
 };
 
 // const LOCALSTORAGE_KEY = 'tasks';
 // const TASKS = JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY)) || [];
 
-// const prepareDOMElements = () => {
-// 	todoInput = document.querySelector('.todo-input');
-// 	errorInfo = document.querySelector('.error-info');
-// 	addBtn = document.querySelector('.btn-add');
-// 	ulList = document.querySelector('.todolist ul');
-// 	popup = document.querySelector('.popup');
-// 	popupInfo = document.querySelector('.popup-info');
-// 	popupInput = document.querySelector('.popup-input');
-// 	popupTaskCategory = document.querySelector('#popup-task-category');
-// 	popupAddBtn = document.querySelector('.accept');
-// 	popupCloseBtn = document.querySelector('.cancel');
-// 	categorySelect = document.querySelector('#task-category');
-// 	categoryOptions = document.querySelectorAll('.category-option');
-// 	categoryIcons = document.querySelectorAll('.category-icon');
-// };
 
-// const prepareDOMEvents = () => {
-// 	addBtn.addEventListener('click', addTask);
-// 	ulList.addEventListener('click', checkClick);
-// 	popupCloseBtn.addEventListener('click', closePopup);
-// 	popupAddBtn.addEventListener('click', changeTodoText);
-// 	todoInput.addEventListener('keyup', enterKeycheck);
-// };
 
 // const updateStorage = () => {
 // 	localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(TASKS));
 // };
-
-const App = () => {
-	return (
-		<>
-			<TodoList /> <Popup />
-		</>
-	);
-};
 
 const rootNode = document.getElementById('root');
 const root = ReactDOM.createRoot(rootNode);
